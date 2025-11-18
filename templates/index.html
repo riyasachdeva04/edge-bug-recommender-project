@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bug Recommendation System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header class="header-row">
+      <h1>🪲 Bug Recommender</h1>
+      <div class="header-actions">
+        <button id="themeToggle" type="button" class="toggle">Dark</button>
+      </div>
+    </header>
+
+    <form id="bugForm" method="post" action="/recommend" class="search-form">
+      <label for="bug_id" class="sr-only">Closed Bug ID</label>
+      <input id="bug_id" type="number" name="bug_id" placeholder="Enter closed bug id (e.g. 0)" required>
+      <button type="submit" class="primary">Get Recommendations</button>
+    </form>
+
+    <div class="content">
+      <aside class="left">
+        <h2 class="section-title">Selected Bug</h2>
+        {% if bug %}
+          <div class="bug-card selected">
+            <div class="meta">
+              <span class="bug-id">ID: {{ bug.id }}</span>
+            </div>
+            <h3 class="bug-title">{{ bug.title }}</h3>
+            <p class="bug-body">{{ bug.body }}</p>
+          </div>
+        {% else %}
+          <div class="bug-card">
+            <p class="bug-body">No bug selected. Enter a bug ID above to view its details and get recommendations.</p>
+          </div>
+        {% endif %}
+      </aside>
+
+      <section class="right">
+        <h2 class="section-title">Recommended Similar Bugs</h2>
+        {% if recs %}
+          <ul class="rec-list">
+            {% for r in recs %}
+              <li class="rec-item">
+                <div class="bug-card">
+                  <h4 class="rec-title">{{ r.title }}</h4>
+                  <p class="rec-body">{{ r.body[:300] }}{% if r.body|length > 300 %}...{% endif %}</p>
+                  <div class="rec-actions">
+                    <form action="/feedback" method="post" class="feedback-form">
+                      <input type="hidden" name="bug_id" value="{{ bug.id }}">
+                      <input type="hidden" name="rec_id" value="{{ r.id }}">
+                      <button name="reward" value="1" class="helpful">Helpful 👍</button>
+                      <button name="reward" value="0" class="nothelpful">Not Helpful 👎</button>
+                    </form>
+                  </div>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="hint">No recommendations yet. Submit a bug ID to get suggestions.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const btn = document.getElementById('themeToggle');
+      const body = document.body;
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const startDark = saved ? saved === 'dark' : prefersDark;
+      if (startDark) body.classList.add('dark');
+      function updateLabel(){
+        btn.textContent = body.classList.contains('dark') ? 'Light' : 'Dark';
+      }
+      updateLabel();
+      btn.addEventListener('click', () => {
+        body.classList.toggle('dark');
+        localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
+        updateLabel();
+      });
+    })();
+  </script>
+</body>
+</html>
